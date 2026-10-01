@@ -2,21 +2,31 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Mapa Interactivo Brasil - Patagonia</title>
-    
-    <!-- Librerías -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Leaflet Curve para rutas curvas -->
-    <script src="https://elfalem.github.io/Leaflet.curve/src/leaflet.curve.js"></script>
+    <meta name="description" content="Mapa interactivo de conectividad aérea Brasil - Patagonia: Balmaceda, Bariloche, El Calafate y Ushuaia, con ferias de interés en Brasil. División de Fomento e Industria, Gobierno Regional de Aysén.">
+    <meta name="theme-color" content="#0f766e">
+    <link rel="canonical" href="https://rarubilar.github.io/patagonia-dashboard/mapa">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Mapa Interactivo Brasil - Patagonia">
+    <meta property="og:description" content="Inteligencia para una posible conexión aérea directa Brasil - Balmaceda (Aysén).">
+    <meta property="og:url" content="https://rarubilar.github.io/patagonia-dashboard/mapa">
+    <meta property="og:image" content="https://rarubilar.github.io/patagonia-dashboard/images/destinos/bba.jpg">
+    <link rel="icon" href="images/destinos/gore-aysen.png">
+
+    <!-- Librerías (versiones fijadas y servidas desde el repo: ver package.json / scripts/vendor.mjs) -->
+    <link rel="stylesheet" href="lib/leaflet/leaflet.css" />
+    <script src="lib/chart.js/chart.umd.min.js"></script>
+    <script src="lib/chartjs-plugin-datalabels/chartjs-plugin-datalabels.min.js"></script>
+    <script src="lib/leaflet/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind precompilado (antes: Play CDN, no apto para producción). Regenerar con `npm run build:css`. -->
+    <link rel="stylesheet" href="assets/css/tailwind.min.css">
 
     <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #ffffff; overflow: hidden; height: 100vh; width: 100vw; }
+        /* .hidden siempre gana sobre clases propias con display (p.ej. .data-grid) */
+        .hidden { display: none !important; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #ffffff; overflow: hidden; height: 100vh; height: 100dvh; width: 100vw; -webkit-font-smoothing: antialiased; }
         
         /* Layout */
         #main-wrapper { position: relative; height: 100%; width: 100%; overflow: hidden; }
@@ -237,6 +247,63 @@
         #ferias-report-btn:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 6px 16px rgba(0,0,0,0.18); border-color: #0f766e; }
         #ferias-report-btn:hover i { transform: scale(1.15); color: #0f766e; }
         #ferias-report-btn:hover span { color: #0f766e; font-weight: 600; }
+
+        /* Respaldo OSM con aspecto claro, similar al mapa base original */
+        #map.osm-gray .leaflet-tile-pane { filter: grayscale(1) brightness(1.06) contrast(0.85); }
+
+        /* Pulido general */
+        #side-panel, #winter-panel, #ush-winter-panel, #ush-cruise-panel, #ush-summer-panel { transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1); overscroll-behavior: contain; }
+        button:focus-visible, a:focus-visible, .tab-btn:focus-visible { outline: 2px solid #0f766e; outline-offset: 2px; }
+        .leaflet-popup-content { width: min(420px, calc(100vw - 48px)) !important; }
+        .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .ferias-tooltip-past { opacity: 0.6; }
+        .ferias-past-tag { color: #64748b; font-size: 0.8em; margin-top: 2px; font-weight: 600; }
+        /* Con el panel lateral abierto, el título no debe quedar debajo del panel */
+        #title-wrap { max-width: calc(100vw - 2.5rem); transition: max-width 0.5s ease; }
+        .panel-active #title-wrap { max-width: calc(50vw - 2.5rem); }
+
+        .title-toggle-hint { display: none; font-size: 0.7rem; color: #0f766e; font-weight: 600; }
+
+        /* Móvil: paneles a pantalla completa y controles compactos sobre el mapa */
+        @media (max-width: 767px) {
+            .panel-active #side-panel,
+            .winter-active #winter-panel,
+            .ush-winter-active #ush-winter-panel,
+            .ush-cruise-active #ush-cruise-panel,
+            .ush-summer-active #ush-summer-panel { width: 100%; }
+            .panel-active #title-wrap { max-width: calc(100vw - 2.5rem); }
+
+            #title-wrap { top: 0.75rem; left: 0.75rem; max-width: calc(100vw - 1.5rem); gap: 0.5rem; }
+            #title-panel { padding: 0.5rem 0.75rem; gap: 0.25rem; }
+            #title-panel h2 { font-size: 0.8rem; margin-bottom: 0; }
+            #title-panel h2 + h2 { font-size: 1.6rem; }
+            #title-panel .title-extra { display: none; }
+            #title-panel { cursor: pointer; }
+            #title-wrap.title-open #title-panel .title-extra { display: block; }
+            #title-wrap.title-open #title-panel p.title-extra { font-size: 0.8rem; }
+            #title-wrap.title-open { z-index: 1100; }
+            .title-toggle-hint { display: inline-block !important; }
+            #title-wrap.title-open .title-toggle-hint { display: none !important; }
+            #gore-logo-position { height: 2.5rem; }
+
+            #map-controls { left: 0.75rem; bottom: 0.75rem; width: auto; max-width: calc(100vw - 4.5rem); }
+            #btn-ferias-brasil { height: 4.5rem !important; min-height: 0; padding: 0.5rem !important; flex-direction: row; }
+            #map-legend { width: auto; padding: 0.5rem 0.6rem; font-size: 10px; }
+            #market-study-btn { width: 5.5rem; }
+            #market-study-btn i { font-size: 1.5rem; }
+
+            #ferias-timeline { left: 0.75rem; right: 0.75rem; top: 7.25rem; flex-wrap: nowrap; overflow-x: auto; }
+            #ferias-timeline > div { flex-wrap: nowrap; }
+            #ferias-report-btn { display: none !important; }
+            .ferias-tooltip { font-size: 10px !important; }
+
+            .hero-img { height: 220px; }
+            #winter-panel > div:nth-child(2), #ush-winter-panel > div:nth-child(2), #ush-cruise-panel > div:nth-child(2), #ush-summer-panel > div:nth-child(2) { height: 13rem; }
+            .content-box { padding: 1rem; }
+            #brc-intl-matrix .grid { grid-template-columns: 1fr; }
+            .kpi-value { word-break: break-word; }
+            .sticky.top-0 { padding-left: 1rem; padding-right: 1rem; }
+        }
     </style>
 </head>
 <body>
@@ -244,14 +311,14 @@
     <div id="main-wrapper">
         <div id="map-container">
             <div id="map" class="h-full w-full bg-[#f0f9ff]"></div>
-            <div class="absolute bottom-5 left-5 flex flex-col gap-2 z-[1000] w-52">
+            <div id="map-controls" class="absolute bottom-5 left-5 flex flex-col gap-2 z-[1000] w-52">
                 <!-- Botón Ferias Brasil (misma estética y hover que Invierno/Verano/Cruceros Ushuaia) -->
                 <button type="button" id="btn-ferias-brasil" onclick="toggleFeriasBrasil()" class="ush-season-btn winter-btn w-full h-80 flex-shrink-0 !px-4 !py-6 flex flex-col items-center justify-center gap-2 rounded-lg border border-slate-200" style="--btn-bg: url('images/destinos/ferias-brasil.jpg'); background-image: var(--btn-bg);">
                     <span id="btn-ferias-label" class="text-sm font-bold">Ferias</span>
                     <div id="btn-ferias-flags" class="flex items-center justify-center gap-1"><img src="https://flagcdn.com/w40/br.png" class="w-6 h-auto rounded shadow-sm opacity-90" alt="Brasil"></div>
                 </button>
                 <div class="flex gap-2 items-stretch">
-                    <div class="bg-white/90 p-3 rounded-lg shadow-lg border border-slate-200 text-xs w-52 flex-shrink-0">
+                    <div id="map-legend" class="bg-white/90 p-3 rounded-lg shadow-lg border border-slate-200 text-xs w-52 flex-shrink-0">
                         <h4 class="font-bold text-slate-800 mb-1.5 uppercase">Simbología</h4>
                         <div class="flex items-center mb-0.5"><div class="w-3 h-3 rounded-full bg-[#0f766e] mr-2"></div> Aeropuerto Estratégico</div>
                         <div class="flex items-center mb-0.5"><div class="w-3 h-3 rounded-full bg-[#0ea5e9] border border-white mr-2"></div> Conexión Directa</div>
@@ -259,7 +326,7 @@
                         <div class="flex items-center"><div class="w-6 h-1 bg-[#0ea5e9] mr-2"></div> Ruta Aérea</div>
                         <div class="flex items-center mt-0.5"><div class="w-6 h-1 bg-amber-500 mr-2"></div> Ruta Terrestre (Acceso)</div>
                     </div>
-                    <a href="#" target="_blank" class="bg-white/90 p-3 rounded-lg shadow-lg border border-slate-200 flex flex-col items-center justify-between gap-2 hover:bg-white hover:shadow-xl transition-all text-[9px] font-medium text-slate-700 w-28 flex-shrink-0" id="market-study-btn">
+                    <a href="#" target="_blank" rel="noopener" class="bg-white/90 p-3 rounded-lg shadow-lg border border-slate-200 flex flex-col items-center justify-between gap-2 hover:bg-white hover:shadow-xl transition-all text-[9px] font-medium text-slate-700 w-28 flex-shrink-0" id="market-study-btn">
                         <div class="flex-1 flex items-center justify-center">
                             <i class="fas fa-book text-slate-600 text-4xl transition-all"></i>
                         </div>
@@ -267,16 +334,17 @@
                     </a>
                 </div>
             </div>
-            <div class="absolute top-5 left-5 z-[1000] flex items-start gap-3">
+            <div id="title-wrap" class="absolute top-5 left-5 z-[1000] flex items-start gap-3">
                 <div id="title-panel" class="max-w-3xl bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200 px-4 py-2 flex flex-col gap-2">
                     <div class="flex flex-col leading-tight">
                         <h2 class="text-slate-800 font-bold text-2xl leading-tight">Mapa Interactivo de Conexión</h2>
                         <h2 class="text-slate-800 font-bold text-5xl leading-tight">Brasil - Patagonia</h2>
+                        <span class="title-toggle-hint"><i class="fas fa-circle-info mr-1"></i>Toca para ver más</span>
                     </div>
-                    <i class="fas fa-plane text-slate-400 text-lg"></i>
-                    <p class="text-slate-500 text-xs font-medium">Raul Rubilar</p>
-                    <p class="text-slate-500 text-[10px] font-medium">División de Fomento e Industria - Gobierno Regional de Aysén</p>
-                    <p class="text-slate-600 text-base leading-snug mt-1">Con el objetivo de aportar inteligencia para la toma de decisiones respecto a una posible conexión aérea directa Brasil - BBA, este mapa muestra 4 puntos turísticos clave en la Patagonia a modo de guía y ferias de interés multidimensional en Brasil de alto valor para aumentar la visibilidad de la región para el mercado Brasileño.</p>
+                    <i class="fas fa-plane text-slate-400 text-lg title-extra"></i>
+                    <p class="text-slate-500 text-xs font-medium title-extra">Raul Rubilar</p>
+                    <p class="text-slate-500 text-[10px] font-medium title-extra">División de Fomento e Industria - Gobierno Regional de Aysén</p>
+                    <p class="text-slate-600 text-base leading-snug mt-1 title-extra">Con el objetivo de aportar inteligencia para la toma de decisiones respecto a una posible conexión aérea directa Brasil - BBA, este mapa muestra 4 puntos turísticos clave en la Patagonia a modo de guía y ferias de interés multidimensional en Brasil de alto valor para aumentar la visibilidad de la región para el mercado Brasileño.</p>
                 </div>
                 <img src="images/destinos/gore-aysen.png" alt="Gore Aysén" class="h-14 w-auto object-contain flex-shrink-0" id="gore-logo-position">
             </div>
@@ -366,7 +434,7 @@
                     <div class="kpi-card" style="border-color: #8b5cf6; border-left: none; border-bottom: 1px solid #e2e8f0; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
                         <div class="kpi-label" style="margin-bottom: 4px;">Estadía media</div>
                         <div class="kpi-value text-slate-700" style="font-size: 1.6rem; margin-top: 0;">5,5 - 7 noches</div>
-                        <div class="text-[10px] text-slate-400 font-medium">(Sky Week)</div>
+                        <div class="text-[10px] text-slate-400 font-medium">(Ski Week)</div>
                     </div>
                     <div class="kpi-card" style="border-color: #f59e0b; border-left: none; border-bottom: 1px solid #e2e8f0; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
                         <div class="kpi-label" style="margin-bottom: 4px;">Origen</div>
@@ -507,7 +575,7 @@
 
                 <!-- Descripción -->
                 <p class="text-base text-slate-600 leading-relaxed text-justify mb-6">
-                    Por su poca a nula carga sobre el sistema turístico local y gran rentabilidad, el cliente 'Crucero' es el más eficiente. Embarcan / arriban en el Puerto de Ushuaia, con destino a Antartica o navegacion por el cana Beagle, atraidos por el atractivo del 'Fin del Mundo'.
+                    Por su poca a nula carga sobre el sistema turístico local y gran rentabilidad, el cliente 'Crucero' es el más eficiente. Embarcan / arriban en el Puerto de Ushuaia, con destino a Antártica o navegación por el Canal Beagle, atraidos por el atractivo del 'Fin del Mundo'.
                 </p>
 
                 <!-- Fila 1 de KPIs -->
@@ -550,6 +618,13 @@
                     </div>
                 </div>
 
+                <!-- Actualización temporada 2025/26 -->
+                <div class="p-3 bg-white rounded-lg border border-emerald-200 text-xs text-slate-600 leading-relaxed">
+                    <div class="text-[10px] font-bold text-emerald-700 uppercase mb-1"><i class="fas fa-sync-alt mr-1"></i>Actualización temporada 2025/26</div>
+                    La temporada cerró con <strong>más de 135.000 pasajeros</strong> y <strong>495 recaladas</strong> (vs 402 en 2024/25). Para 2026/27 hay <strong>más de 590 recaladas</strong> programadas.
+                    <div class="text-[9px] text-slate-400 italic mt-1">Fuente: Dirección Provincial de Puertos / Puerto de Ushuaia, abr. 2026. KPIs superiores: temporada 2024/25.</div>
+                </div>
+
                 <!-- Gráfico Origen de Turistas -->
                 <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 mt-6 mb-6">
                     <h3 class="text-xs font-bold text-slate-500 uppercase mb-1 text-center">Origen de Turistas</h3>
@@ -577,7 +652,7 @@
 
                 <!-- Descripción -->
                 <p class="text-base text-slate-600 leading-relaxed text-justify mb-4">
-                    Esta temporada es la de mayor volumen en cantidad de arribos por su naturaleza y actividades de montaña. Con un mix de turistas mas internacional y gran conectividad aerea nacional, los turistas en verano son de perfil ultra high yield y buscan activamente el 'Ciruito Patagonico', conectando con FTE y otras provincias patagonicas.
+                    Esta temporada es la de mayor volumen en cantidad de arribos por su naturaleza y actividades de montaña. Con un mix de turistas mas internacional y gran conectividad aerea nacional, los turistas en verano son de perfil ultra high yield y buscan activamente el 'Circuito Patagónico', conectando con FTE y otras provincias patagonicas.
                 </p>
 
                 <!-- Separador -->
@@ -604,7 +679,7 @@
                 <div class="data-grid mb-4">
                     <div class="kpi-card" style="border-color: #ea580c; border-left: none; border-bottom: 1px solid #e2e8f0; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
                         <div class="kpi-label" style="margin-bottom: 4px;">Grupos entre 3 y 5 personas</div>
-                        <div class="kpi-value text-slate-700" style="font-size: 1.6rem; margin-top: 0;">Entre 30 y 45 anos</div>
+                        <div class="kpi-value text-slate-700" style="font-size: 1.6rem; margin-top: 0;">Entre 30 y 45 años</div>
                         <div class="text-[0.7rem] font-bold uppercase" style="color: #64748b;">50% parejas, 25% grupo de amigos</div>
                     </div>
                     <div class="kpi-card" style="border-color: #f97316; border-left: none; border-bottom: 1px solid #e2e8f0; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
@@ -708,6 +783,9 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Actualización con cifras oficiales más recientes (año calendario), inyectado por JS -->
+                        <div id="air-update" class="hidden mb-6 p-3 bg-white rounded-lg border border-emerald-200 text-xs text-slate-600 leading-relaxed"></div>
 
                         <!-- NUEVO: KPIs específicos para El Calafate (FTE) MOVIDOS AQUÍ (Debajo de KPIs generales, arriba de gráficos) -->
                         <div id="fte-air-stats" class="hidden data-grid mb-6">
@@ -826,7 +904,7 @@
                             <div class="bg-teal-50 px-4 py-2 border-b border-teal-100">
                                 <h3 class="text-[10px] font-bold text-teal-800 uppercase">Ranking de visitas a Parques Nacionales, Región de Aysén, 2025</h3>
                             </div>
-                            <table class="w-full text-xs">
+                            <div class="table-scroll"><table class="w-full text-xs">
                                 <thead class="bg-white text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-100">
                                     <tr>
                                         <th class="px-4 py-2 text-left">Parque Nacional</th>
@@ -837,7 +915,7 @@
                                 <tbody class="divide-y divide-slate-50 text-slate-600" id="tour-parks-body">
                                     <!-- Inyectado por JS -->
                                 </tbody>
-                            </table>
+                            </table></div>
                         </div>
 
                         <!-- Nueva Tabla Movida (Bariloche) -->
@@ -845,7 +923,7 @@
                             <div class="bg-orange-50 px-4 py-2 border-b border-orange-100">
                                 <h3 class="text-[10px] font-bold text-orange-800 uppercase">Ranking de visitas a Puntos turisticos seleccionados, Bariloche, nov. 2024-2025</h3>
                             </div>
-                            <table class="w-full text-xs">
+                            <div class="table-scroll"><table class="w-full text-xs">
                                 <thead class="bg-white text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-100">
                                     <tr>
                                         <th class="px-4 py-2 text-left">Punto Turístico</th>
@@ -880,7 +958,7 @@
                                         <td class="px-4 py-2 text-right text-[10px] font-bold text-green-500 bg-slate-50 rounded">+2,5%</td>
                                     </tr>
                                 </tbody>
-                            </table>
+                            </table></div>
                         </div>
 
                         <!-- Nueva Tabla para Ushuaia -->
@@ -888,7 +966,7 @@
                             <div class="bg-slate-50 px-4 py-2 border-b border-slate-100">
                                 <h3 class="text-[10px] font-bold text-slate-800 uppercase">Ranking de visitas a Puntos turisticos seleccionados, Ushuaia, nov. 2024-2025</h3>
                             </div>
-                            <table class="w-full text-xs">
+                            <div class="table-scroll"><table class="w-full text-xs">
                                 <thead class="bg-white text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-100">
                                     <tr>
                                         <th class="px-4 py-2 text-left">Punto Turístico</th>
@@ -928,7 +1006,7 @@
                                         <td class="px-4 py-1 text-[9px] text-slate-400 italic">Fuente: INFUETUR (ICT). Pases de esquí vendidos temporada invernal.</td>
                                     </tr>
                                 </tbody>
-                            </table>
+                            </table></div>
                         </div>
 
                         <div class="mb-6">
@@ -972,16 +1050,16 @@
                         <div id="ush-airline-buttons" class="hidden mb-4">
                             <h3 class="text-xs font-bold text-slate-600 uppercase mb-3 text-center">Nuevas Rutas</h3>
                             <div class="grid grid-cols-2 gap-3">
-                                <a href="https://www.latamairlines.com/br/pt/imprensa/noticias/latam-anuncia-voo-direto-do-brasil-para-ushuaia--o--fim-do-mundo" target="_blank" class="flex flex-col bg-white rounded-lg border border-slate-200 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer overflow-hidden">
+                                <a href="https://www.panrotas.com.br/aviacao/novas-rotas/2026/01/latam-anuncia-voos-diretos-para-ushuaia-e-retomada-da-rota-para-bariloche_224902.html" target="_blank" rel="noopener" class="flex flex-col bg-white rounded-lg border border-slate-200 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer overflow-hidden">
                                     <img src="images/pois/ush/latam.jpg" alt="LATAM" class="w-full h-40 object-cover">
                                     <div class="p-3">
-                                        <div class="text-[10px] font-semibold text-slate-700 leading-tight">LATAM anuncia vuelos directos desde Brasil a Ushuaia para invierno 2026</div>
+                                        <div class="text-[10px] font-semibold text-slate-700 leading-tight">LATAM: vuelo directo GRU - USH, invierno 2026 (1 jul - 31 ago, 4 vuelos/sem., A320 de 174 pax)</div>
                                     </div>
                                 </a>
-                                <a href="https://www.argentina.gob.ar/noticias/nuevas-rutas-aereas-de-brasil-la-argentina-para-la-temporada-de-invierno" target="_blank" class="flex flex-col bg-white rounded-lg border border-slate-200 hover:border-orange-500 hover:shadow-md transition-all cursor-pointer overflow-hidden">
+                                <a href="https://www.panrotas.com.br/aviacao/novas-rotas/2026/07/gol-inaugura-nova-rota-sao-paulo-ushuaia-e-chega-a-seis-destinos-argentinos_230083.html" target="_blank" rel="noopener" class="flex flex-col bg-white rounded-lg border border-slate-200 hover:border-orange-500 hover:shadow-md transition-all cursor-pointer overflow-hidden">
                                     <img src="images/pois/ush/gol-flota.jpg" alt="GOL" class="w-full h-40 object-cover">
                                     <div class="p-3">
-                                        <div class="text-[10px] font-semibold text-slate-700 leading-tight">GOL abre ruta directa Brazil - Ushuaia para Invierno 2026</div>
+                                        <div class="text-[10px] font-semibold text-slate-700 leading-tight">GOL: vuelo directo GRU - USH, invierno 2026 (7 jul - 29 ago, 3 vuelos/sem., B737 de 176 pax)</div>
                                     </div>
                                 </a>
                             </div>
@@ -1001,7 +1079,7 @@
                         </div>
 
                         <!-- NUEVO: Apartados específicos para Bariloche (BRC) -->
-                        <div id="brc-intl-extra-stats" class="hidden mb-6" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                        <div id="brc-intl-extra-stats" class="hidden mb-6 grid-cols-3" style="gap: 15px;">
                             <!-- Apartado 1: Rutas -->
                             <div class="kpi-card" style="border-color: #3b82f6; border-left: none; border-bottom: 1px solid #e2e8f0; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
                                 <div class="kpi-label" style="margin-bottom: 4px;">rutas comerciales internacionales directas</div>
@@ -1089,10 +1167,10 @@
                             <div class="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-end">
                                 <div>
                                     <h3 class="text-[10px] font-bold text-slate-500 uppercase inline">Ingreso de turistas a Bariloche</h3>
-                                    <span class="text-[9px] text-slate-400 font-medium ml-1">Nov. 2026 - Nov. 2025</span>
+                                    <span class="text-[9px] text-slate-400 font-medium ml-1">Nov. 2024 - Nov. 2025</span>
                                 </div>
                             </div>
-                            <table class="w-full text-xs">
+                            <div class="table-scroll"><table class="w-full text-xs">
                                 <thead class="bg-slate-50 text-slate-400 font-semibold uppercase tracking-wider">
                                     <tr>
                                         <th class="px-4 py-2 text-left">País / Origen</th>
@@ -1150,10 +1228,10 @@
                                         <td class="px-4 py-2 text-right font-bold text-blue-600">255.000</td>
                                         <td class="px-4 py-2 text-right text-slate-500">100%</td>
                                         <td class="px-4 py-2 text-right text-green-600 font-bold">+7,8%</td>
-                                        <td class="px-4 py-2 text-right text-[10px] text-slate-400 italic">Recuperacion sostenica</td>
+                                        <td class="px-4 py-2 text-right text-[10px] text-slate-400 italic">Recuperación sostenida</td>
                                     </tr>
                                 </tbody>
-                            </table>
+                            </table></div>
                         </div>
 
                         <!-- NUEVA TABLA: Ingreso de turistas a El Calafate (FTE) -->
@@ -1164,7 +1242,7 @@
                                     <span class="text-[9px] text-slate-400 font-medium ml-1">Nov. 2024 - Nov. 2025</span>
                                 </div>
                             </div>
-                            <table class="w-full text-xs">
+                            <div class="table-scroll"><table class="w-full text-xs">
                                 <thead class="bg-slate-50 text-slate-400 font-semibold uppercase tracking-wider">
                                     <tr>
                                         <th class="px-4 py-2 text-left">País / Origen</th>
@@ -1225,7 +1303,7 @@
                                         <td class="px-4 py-2 text-right text-[10px] text-slate-400 italic">Record de internacionalizacion</td>
                                     </tr>
                                 </tbody>
-                            </table>
+                            </table></div>
                         </div>
                         
                         <!-- NUEVO: Fuente y Metodología para la tabla de El Calafate -->
@@ -1241,7 +1319,7 @@
                                     <span class="text-[9px] text-slate-400 font-medium ml-1">Nov. 2024 - Nov. 2025</span>
                                 </div>
                             </div>
-                            <table class="w-full text-xs">
+                            <div class="table-scroll"><table class="w-full text-xs">
                                 <thead class="bg-slate-50 text-slate-400 font-semibold uppercase tracking-wider">
                                     <tr>
                                         <th class="px-4 py-2 text-left">Ranking</th>
@@ -1302,7 +1380,7 @@
                                         <td class="px-4 py-2 text-[10px] text-slate-400 italic">Reino Unido (Cruceros), China (Creciente en Antártida) y Chile (Terrestre).</td>
                                     </tr>
                                 </tbody>
-                            </table>
+                            </table></div>
                         </div>
 
                         <!-- Botón y Panel de Metodología para Ushuaia -->
@@ -1322,7 +1400,7 @@
                                 <div class="mb-4">
                                     <p class="font-semibold text-slate-700 mb-1">EE.UU. y Europa (El Factor Crucero):</p>
                                     <p class="mb-1"><strong>Fuente:</strong> Dirección Provincial de Puertos (DPP).</p>
-                                    <p><strong>Dato:</strong> El 90% de los pasajeros de cruceros antárticos son del hemisferio norte. Al cruzar los datos de recaladas (402 en la temporada) con la nacionalidad de los pasajeros, EE.UU. emerge como el líder indiscutido del segmento marítimo.</p>
+                                    <p><strong>Dato:</strong> El 90% de los pasajeros de cruceros antárticos son del hemisferio norte. Al cruzar los datos de recaladas (402 en la temporada 2024/25) con la nacionalidad de los pasajeros, EE.UU. emerge como el líder indiscutido del segmento marítimo.</p>
                                 </div>
 
                                 <div>
@@ -1340,7 +1418,7 @@
                                     <span class="text-[9px] text-slate-400 font-medium ml-1">2022-2025</span>
                                 </div>
                             </div>
-                            <table class="w-full text-xs">
+                            <div class="table-scroll"><table class="w-full text-xs">
                                 <thead class="bg-slate-50 text-slate-400 font-semibold uppercase tracking-wider">
                                     <tr>
                                         <th class="px-4 py-2 text-left">País / Origen</th>
@@ -1351,7 +1429,7 @@
                                 <tbody class="divide-y divide-slate-100 text-slate-600" id="intl-table-body">
                                     <!-- Inyectado por JS -->
                                 </tbody>
-                            </table>
+                            </table></div>
                         </div>
                     </div>
                     <div id="tab-brazil" class="hidden tab-content">
@@ -1364,12 +1442,12 @@
                             <div>
                                 <div class="flex items-baseline gap-2">
                                     <div class="text-xs font-bold text-yellow-800 uppercase">Turistas Brasileños en Chile</div>
-                                    <div class="text-[10px] font-semibold text-yellow-600">2024</div>
+                                    <div class="text-[10px] font-semibold text-yellow-600">2025</div>
                                 </div>
-                                <div class="text-3xl font-black text-yellow-600">743.971</div>
-                                <div class="text-[10px] text-yellow-700 font-bold mt-1">+ 63% vs 2023</div>
-                                <div class="text-xl font-bold text-yellow-600 mt-2">Aporte de USD $373 millones</div>
-                                <div class="text-[9px] text-slate-400 mt-1 italic">DFSUD, 2025</div>
+                                <div class="text-3xl font-black text-yellow-600">681.649</div>
+                                <div class="text-[10px] text-yellow-700 font-bold mt-1">- 13,4% vs 2024 · 2° mercado emisor de Sudamérica (11,4% de las llegadas)</div>
+                                <div class="text-xl font-bold text-yellow-600 mt-2">Aporte de USD $373 millones <span class="text-[10px] font-semibold">(2024)</span></div>
+                                <div class="text-[9px] text-slate-400 mt-1 italic">SERNATUR, feb. 2026; DFSUD, 2025</div>
                             </div>
                         </div>
 
@@ -1550,8 +1628,8 @@
                     </div>
                 </div>
                 <!-- CAMBIO: Footers diferenciados por destino -->
-                <div id="footer-bba" class="hidden p-4 text-[10px] text-slate-400 border-t border-slate-200 text-center">Fuentes: ANAC, JAC, INE, EMAT, SNASPE, ETI. Procesamiento Nov 2025.</div>
-                <div id="footer-arg" class="hidden p-4 text-[10px] text-slate-400 border-t border-slate-200 text-center">Fuentes: ANAC / SIAC, ETI / EOH INDEC, ORSNA, YVERA, INFUETUR, AEFGH, 2025.</div>
+                <div id="footer-bba" class="hidden p-4 text-[10px] text-slate-400 border-t border-slate-200 text-center">Fuentes: ANAC, JAC, INE, EMAT, SNASPE, ETI, SERNATUR. Procesamiento Nov 2025; actualización parcial Oct 2026.</div>
+                <div id="footer-arg" class="hidden p-4 text-[10px] text-slate-400 border-t border-slate-200 text-center">Fuentes: ANAC / SIAC, ETI / EOH INDEC, ORSNA, YVERA, INFUETUR, AEFGH, 2025; actualización parcial Oct 2026 (Aeropuertos Argentina, DPP Ushuaia).</div>
             </div>
             <div id="empty-state" class="h-full flex flex-col justify-center items-center p-10 text-center text-slate-400"><i class="fas fa-plane-arrival text-6xl mb-4 text-slate-200"></i><p>Seleccione un aeropuerto en el mapa para ver el análisis estratégico.</p></div>
         </div>
@@ -1566,6 +1644,18 @@
             Chart.defaults.set('plugins.datalabels', {
                 display: false
             });
+
+            // Móvil: tocar el título muestra/oculta la descripción
+            document.getElementById('title-panel').addEventListener('click', () => {
+                if (window.innerWidth < 768) document.getElementById('title-wrap').classList.toggle('title-open');
+            });
+
+            // Enlace del botón "Ver estudio de mercado completo". Estaba como href="#" (abría la misma página);
+            // mientras no haya URL el botón se oculta. Pegar aquí el enlace al documento del estudio.
+            const MARKET_STUDY_URL = '';
+            const marketStudyBtn = document.getElementById('market-study-btn');
+            if (MARKET_STUDY_URL) marketStudyBtn.href = MARKET_STUDY_URL;
+            else marketStudyBtn.classList.add('hidden');
 
             const destCoords = {
                 // Nombres originales (usados por BBA y USH)
@@ -1597,9 +1687,9 @@
                     flag: '🇨🇱',
                     name: 'Chile',
                     gdp: '3.3%',
-                    tourists: '5.24 M',
+                    tourists: '6.00 M <div class="text-[8px] text-slate-400 font-normal leading-tight mt-0.5">Llegadas 2025 (+14,6% vs 2024)</div>',
                     revenue: '$3.62B USD',
-                    source: 'AT, ETI, SERNATUR / IC JAC nov. 2025'
+                    source: 'SERNATUR / Subturismo 2025; AT, ETI / IC JAC nov. 2025'
                 },
                 'AR': {
                     flag: '🇦🇷',
@@ -1776,6 +1866,10 @@
                         growth: '+1.5%', 
                         mov: '17.920', 
                         cargo: '350 Ton',
+                        update: `<div class="text-[10px] font-bold text-emerald-700 uppercase mb-1"><i class="fas fa-sync-alt mr-1"></i>Actualización año 2025</div>
+                                 <strong>2.571.000</strong> pasajeros totales en BRC (+8,4% vs 2.372.000 en 2024), 5° aeropuerto del país.
+                                 <strong>140.000</strong> pasajeros internacionales (+51% vs 93.000 en 2024).
+                                 <div class="text-[9px] text-slate-400 italic mt-1">Fuente: Aeropuertos Argentina vía Diario Río Negro / Económicas Bariloche, feb. 2026. Los KPIs superiores corresponden al periodo de estudio Nov 24 - Nov 25.</div>`,
                         lf: `<div class="flex justify-between items-center text-center">
                                 <div class="flex-1 text-center flex flex-col justify-center">
                                     <div class="text-[10px] uppercase font-bold text-slate-400" style="margin-bottom: 2px;">Julio</div>
@@ -1799,7 +1893,7 @@
                     tourist: { 
                         arr: '980.000', 
                         nights: '4.5M', 
-                        spend: '$600 mil millones USD', 
+                        spend: 'USD $600 M', 
                         stay: '4.5', 
                         conclusion: 'Doble estacionalidad marcada. Invierno (Jul-Ago) High Yield y Verano (Ene-Feb) masivo.',
                         methodology_text: "<strong>METODOLOGÍA Y FUENTES DE PRECISIÓN (NOV 2024 - NOV 2025):</strong><br>1. <strong>Arribos Aéreos (Techo):</strong> Calculado en base al archivo <em>series-historicas-2023-2025.xlsx</em> (ANAC SIAC). Movimiento total (2.68M) dividido por 2.<br>2. <strong>Llegadas Hoteleras (Realidad):</strong> Datos procesados de Informes Mensuales EOH (INDEC) y AEHGB. Ajustado por tendencia de ocupación regional.<br>3. <strong>Visitas Puntos de Interés Turísticos:</strong> Sumatoria consolidada de ingresos a Parques Nacionales y Centros de Esquí. Se utilizaron datos reales de YVERA (Áreas Protegidas) y estimaciones de CAPSA (Catedral) basadas en el flujo de invierno."
@@ -1831,7 +1925,7 @@
                         growth: '+15%', 
                         // CAMBIO: Datos actualizados y ampliados para Bariloche con HTML interno
                         d1: '55% del total de turistas brasilenos en Arg. arriban en Bariloche en invierno<div class="mt-1 text-slate-500 text-xs"><i class="fas fa-ticket-alt mr-1 text-sky-500"></i> De 12-16 hrs pasando por BA a 4,5 hrs con vuelo directo</div><div class="mt-0.5 text-slate-500 text-xs pl-4">25-30% menos de coste operativo y logistico de viaje</div>', 
-                        d2: '2018 punto de inflexion: LATAM y Azul inician 35 vuelos directos estacionales en invierno, aumentando de de 4.500 a 18.000 pax brasilenos.<div class="mt-1 text-slate-500 text-xs">2024 la oferta aumentó a +230 vuelos estacionales directos, permitió más de 52.000 brasileños</div>', 
+                        d2: '2018 punto de inflexion: LATAM y Azul inician 35 vuelos directos estacionales en invierno, aumentando de 4.500 a 18.000 pax brasilenos.<div class="mt-1 text-slate-500 text-xs">2024 la oferta aumentó a +230 vuelos estacionales directos, permitió más de 52.000 brasileños</div><div class="mt-1 text-slate-500 text-xs">Invierno 2026: LATAM retoma GRU-BRC diario (15 jun - 30 ago, hasta 10 vuelos/sem. en jul-ago) y GOL opera GRU-BRC (26 jun - 2 ago).</div>', 
                         d3: 'Gasto premium ($320 USD/día).' 
                     },
                     pois: [
@@ -2026,10 +2120,28 @@
             };
 
             const map = L.map('map', { zoomControl: false }).setView([-48.0, -72.0], 5);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap &copy; CARTO',
-                maxZoom: 10
-            }).addTo(map);
+            // Mapa base. CARTO pasó a exigir API key (las teselas mostraban "API KEY REQUIRED").
+            // Se usa el gris claro de Esri (sin clave) y, si sus teselas fallan, OpenStreetMap en escala de grises.
+            map.createPane('labels');
+            map.getPane('labels').style.zIndex = 350; // sobre el mapa base, bajo rutas y marcadores
+            map.getPane('labels').style.pointerEvents = 'none';
+            const esriAttribution = 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors';
+            const baseLayers = [
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', { attribution: esriAttribution, maxZoom: 10 }),
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: 10, pane: 'labels' })
+            ];
+            let tileErrors = 0, usingFallback = false;
+            baseLayers[0].on('tileerror', () => {
+                if (usingFallback || ++tileErrors < 4) return;
+                usingFallback = true;
+                baseLayers.forEach(l => map.removeLayer(l));
+                document.getElementById('map').classList.add('osm-gray');
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    maxZoom: 10
+                }).addTo(map);
+            });
+            baseLayers.forEach(l => l.addTo(map));
             L.control.zoom({ position: 'bottomright' }).addTo(map);
 
             const ferias = [
@@ -2066,6 +2178,17 @@
             let feriasLayer = null, feriasLegendControl = null, feriasActive = false, feriasMonthFilter = [], feriasSectorFilter = null;
             let airportMarkersLayer = null;
             const FERIAS_MONTH_MAP = { Jan:1, Ene:1, Feb:2, Mar:3, Abr:4, Apr:4, May:5, Jun:6, Jul:7, Ago:8, Aug:8, Sep:9, Oct:10, Nov:11, Dic:12, Dec:12 };
+            const FERIAS_YEAR = 2026;
+            // Fecha de término de la feria a partir de textos como "09-13 Feb" o "29 Ago - 06 Sep"
+            function feriaEndDate(feria) {
+                const m = (feria.date || '').match(/(\d{1,2})\s*([A-Za-z]{3})\s*$/);
+                if (!m || !FERIAS_MONTH_MAP[m[2]]) return null;
+                return new Date(FERIAS_YEAR, FERIAS_MONTH_MAP[m[2]] - 1, parseInt(m[1], 10), 23, 59);
+            }
+            function feriaIsPast(feria) {
+                const end = feriaEndDate(feria);
+                return !!end && end < new Date();
+            }
             function feriaMatchesMonth(feria, monthNum) {
                 const d = (feria.date || '').replace(/-/g, ' ');
                 const ms = new Set();
@@ -2126,13 +2249,14 @@
                 const isP = feria.priority, sz = isP ? 24 : 14, cls = isP ? 'ferias-marker-priority' : 'ferias-marker-normal', z = isP ? 1000 : 500;
                 const icon = L.divIcon({ className: 'custom-div-icon', html: `<div class="ferias-marker-icon ${cls}" style="width:${sz}px;height:${sz}px;"></div>`, iconSize: [sz, sz], iconAnchor: [sz/2, sz/2] });
                 const m = L.marker([lat, lng], { icon, zIndexOffset: z }).addTo(layer);
-                const tip = `<div class="text-center" onclick="window.open('${feria.url}','_blank')"><div style="font-size:1.1em;margin-bottom:2px;font-weight:bold">${feria.name}</div><div style="color:#555;font-weight:normal">(${feria.type})</div><div style="color:#555;font-weight:normal">${feria.date}</div><span class="ferias-click-hint">(Clic para web)</span>${isP ? '<div style="color:#d97706;font-size:0.8em;margin-top:2px">★ PRIORIDAD</div>' : ''}</div>`;
-                m.bindTooltip(tip, { permanent: true, direction: 'top', className: isP ? 'ferias-tooltip ferias-tooltip-priority' : 'ferias-tooltip', offset: [0, -10], interactive: true });
+                const past = feriaIsPast(feria);
+                const tip = `<div class="text-center" onclick="window.open('${feria.url}','_blank')"><div style="font-size:1.1em;margin-bottom:2px;font-weight:bold">${feria.name}</div><div style="color:#555;font-weight:normal">(${feria.type})</div><div style="color:#555;font-weight:normal">${feria.date} ${FERIAS_YEAR}</div>${past ? '<div class="ferias-past-tag">Realizada</div>' : ''}<span class="ferias-click-hint">(Clic para web)</span>${isP ? '<div style="color:#d97706;font-size:0.8em;margin-top:2px">★ PRIORIDAD</div>' : ''}</div>`;
+                m.bindTooltip(tip, { permanent: true, direction: 'top', className: (isP ? 'ferias-tooltip ferias-tooltip-priority' : 'ferias-tooltip') + (past ? ' ferias-tooltip-past' : ''), offset: [0, -10], interactive: true });
                 m.on('click', () => window.open(feria.url, '_blank'));
             }
             function getFeriasLegendControl() {
                 const c = L.control({ position: 'bottomright' });
-                c.onAdd = function() { const d = L.DomUtil.create('div', 'ferias-legend'); d.innerHTML = '<h4 class="font-bold">Leyenda</h4><div><i style="background:#d97706;border:1px solid #fff"></i> Prioridad</div><div><i style="background:#3b82f6;border:1px solid #fff"></i> Sectorial</div><div class="ferias-legend-note text-gray-500">São Paulo dispersado.</div>'; return d; };
+                c.onAdd = function() { const d = L.DomUtil.create('div', 'ferias-legend'); d.innerHTML = '<h4 class="font-bold">Leyenda</h4><div><i style="background:#d97706;border:1px solid #fff"></i> Prioridad</div><div><i style="background:#3b82f6;border:1px solid #fff"></i> Sectorial</div><div class="ferias-legend-note text-gray-500">São Paulo dispersado.</div><div class="ferias-legend-note text-gray-500">Atenuadas: ferias ya realizadas.</div>'; return d; };
                 return c;
             }
             function updateFeriasButtonContent() {
@@ -2164,7 +2288,7 @@
                     if (tl) tl.classList.add('hidden');
                     const reportBtn = document.getElementById('ferias-report-btn');
                     if (reportBtn) reportBtn.classList.add('hidden');
-                    if (marketBtn) marketBtn.classList.remove('hidden');
+                    if (marketBtn && MARKET_STUDY_URL) marketBtn.classList.remove('hidden');
                 } else {
                     if (document.getElementById('main-wrapper').classList.contains('panel-active')) closePanelAndClearMap();
                     if (airportMarkersLayer) map.removeLayer(airportMarkersLayer);
@@ -2303,11 +2427,12 @@
                 renderPOIs(data);
                 switchTab('plane');
                 
-                const offset = window.innerWidth * 0.5; // Ajuste para 50%
-                map.flyTo([parseFloat(data.info.lat), parseFloat(data.info.lon)], 6, { 
-                    duration: 1.5, 
-                    paddingBottomRight: [offset, 0] 
-                });
+                // flyTo no acepta padding: se desplaza el centro para que el aeropuerto quede en la mitad visible del mapa
+                const target = L.latLng(parseFloat(data.info.lat), parseFloat(data.info.lon));
+                const zoom = 6;
+                const panelWidth = window.innerWidth >= 768 ? window.innerWidth * 0.5 : 0;
+                const center = map.unproject(map.project(target, zoom).add([panelWidth / 2, 0]), zoom);
+                map.flyTo(center, zoom, { duration: 1.5 });
             };
 
             window.togglePanel = function() {
@@ -2593,6 +2718,12 @@
                 }
             });
 
+            function showFor(el, visible, displayClass) {
+                if (!el) return;
+                el.classList.toggle('hidden', !visible);
+                if (displayClass) el.classList.toggle(displayClass, visible);
+            }
+
             function destroyCharts() {
                 Object.values(charts).forEach(c => c.destroy());
                 charts = {};
@@ -2615,6 +2746,10 @@
                     lfContainer.innerHTML = '';
                     lfContainer.parentElement.classList.add('hidden'); // Ocultar si no hay datos para otros destinos
                 }
+
+                const airUpdate = document.getElementById('air-update');
+                airUpdate.innerHTML = data.air.update || '';
+                showFor(airUpdate, !!data.air.update);
 
                 // NUEVO: Mostrar KPIs específicos para El Calafate (FTE)
                 const fteStats = document.getElementById('fte-air-stats');
@@ -3389,17 +3524,19 @@
                 const ushAirlineButtons = document.getElementById('ush-airline-buttons');
                 const ushMethodologyContainer = document.getElementById('ush-intl-methodology-container');
                 
-                if (data.info.code === 'BRC') {
-                    brcExtraStats.classList.remove('hidden');
-                    brcMatrix.classList.remove('hidden');
-                    brcTable.classList.remove('hidden');
-                    fteTable.classList.add('hidden'); 
-                    if (fteSource) fteSource.classList.add('hidden'); // Ocultar fuente FTE
-                    if (ushTable) ushTable.classList.add('hidden');
-                    if (ushGrowthKpi) ushGrowthKpi.classList.add('hidden');
-                    if (ushAirlineButtons) ushAirlineButtons.classList.add('hidden');
-                    if (ushMethodologyContainer) ushMethodologyContainer.classList.add('hidden');
-                    
+                // Cada bloque específico se muestra solo para su destino (antes quedaban visibles al cambiar de aeropuerto)
+                const code = data.info.code;
+                showFor(brcExtraStats, code === 'BRC', 'grid');
+                showFor(brcMatrix, code === 'BRC');
+                showFor(brcTable, code === 'BRC');
+                showFor(fteTable, code === 'FTE');
+                showFor(fteSource, code === 'FTE');
+                showFor(ushTable, code === 'USH');
+                showFor(ushGrowthKpi, code === 'USH');
+                showFor(ushAirlineButtons, code === 'USH');
+                showFor(ushMethodologyContainer, code === 'USH');
+
+                if (code === 'BRC') {
                     // Render Matrix Charts con LEYENDA ACTIVADA
                     // ... (código existente de gráficos) ...
                     const commonMatrixOptions = { 
@@ -3435,40 +3572,8 @@
                         charts.gig = new Chart(document.getElementById('chartGIG'), { type: 'doughnut', data: { labels: ['Aerolíneas Arg.', 'GOL'], datasets: [{ data: [58, 42], backgroundColor: ['#3b82f6', '#f97316'], borderWidth: 0 }] }, options: commonMatrixOptions });
                     }
 
-                } else if (data.info.code === 'FTE') {
-                    // Si es FTE, mostrar su tabla y fuente, ocultar lo de BRC
-                    brcExtraStats.classList.add('hidden');
-                    brcMatrix.classList.add('hidden');
-                    brcTable.classList.add('hidden');
-                    fteTable.classList.remove('hidden');
-                    if (fteSource) fteSource.classList.remove('hidden'); // Mostrar fuente FTE
-                    if (ushTable) ushTable.classList.add('hidden');
-                    if (ushGrowthKpi) ushGrowthKpi.classList.add('hidden');
-                    if (ushMethodologyContainer) ushMethodologyContainer.classList.add('hidden');
-                } else if (data.info.code === 'USH') {
-                    // Si es USH, mostrar su tabla y KPI, ocultar lo demás
-                    brcExtraStats.classList.add('hidden');
-                    brcMatrix.classList.add('hidden');
-                    brcTable.classList.add('hidden');
-                    fteTable.classList.add('hidden');
-                    if (fteSource) fteSource.classList.add('hidden');
-                    if (ushTable) ushTable.classList.remove('hidden');
-                    if (ushGrowthKpi) ushGrowthKpi.classList.remove('hidden');
-                    if (ushAirlineButtons) ushAirlineButtons.classList.remove('hidden');
-                    if (ushMethodologyContainer) ushMethodologyContainer.classList.remove('hidden');
-                } else {
-                    // Si no es ni BRC ni FTE ni USH, ocultar todos
-                    brcExtraStats.classList.add('hidden');
-                    brcMatrix.classList.add('hidden');
-                    brcTable.classList.add('hidden');
-                    fteTable.classList.add('hidden');
-                    if (fteSource) fteSource.classList.add('hidden');
-                    if (ushTable) ushTable.classList.add('hidden');
-                    if (ushGrowthKpi) ushGrowthKpi.classList.add('hidden');
-                    if (ushAirlineButtons) ushAirlineButtons.classList.add('hidden');
-                    if (ushMethodologyContainer) ushMethodologyContainer.classList.add('hidden');
                 }
-                
+
                 // CAMBIO: Lógica para renderizar la tabla de origen (Genérica para BBA)
                 const tableContainer = document.getElementById('intl-origin-table');
                 const tableBody = document.getElementById('intl-table-body');
@@ -3582,6 +3687,7 @@
             }
 
             function renderBrazilTab(data) {
+                destroyCharts();
                 // CAMBIO: Lógica robusta para actualizar el contenido de Brasil
                 
                 // 1. Título Dinámico y Periodo y Fuente
@@ -3669,19 +3775,9 @@
                 } else if (data.info.code === 'USH' && argCardUSH) {
                     argCardUSH.classList.remove('hidden');
                     argCardUSH.classList.add('flex');
-                    
-                    // Mostrar información detallada de turistas brasileños en Ushuaia
-                    const ushBrDetails = document.getElementById('ush-br-details');
-                    if (ushBrDetails) {
-                        ushBrDetails.classList.remove('hidden');
-                    }
-                } else {
-                    // Ocultar información detallada si no es Ushuaia
-                    const ushBrDetails = document.getElementById('ush-br-details');
-                    if (ushBrDetails) {
-                        ushBrDetails.classList.add('hidden');
-                    }
                 }
+                // Información detallada de turistas brasileños: solo Ushuaia
+                showFor(document.getElementById('ush-br-details'), data.info.code === 'USH');
 
                 // Ocultar 3 tickets (br-data1, br-data2, br-data3) solo para Ushuaia; mostrar para el resto
                 const brDataList = document.getElementById('br-data-list');
@@ -3978,7 +4074,7 @@
             new Chart(document.getElementById('chart-ush-summer-origin'), {
                 type: 'doughnut',
                 data: {
-                    labels: ['Europa', 'USD / Canada', 'Argentina', 'Brasil / Chile', 'Otros'],
+                    labels: ['Europa', 'USA / Canadá', 'Argentina', 'Brasil / Chile', 'Otros'],
                     datasets: [{
                         data: [30, 20, 35, 10, 5],
                         backgroundColor: ['#c2410c', '#d97706', '#ea580c', '#fb923c', '#fdba74'],
