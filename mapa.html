@@ -248,6 +248,9 @@
         #ferias-report-btn:hover i { transform: scale(1.15); color: #0f766e; }
         #ferias-report-btn:hover span { color: #0f766e; font-weight: 600; }
 
+        /* Respaldo OSM con aspecto claro, similar al mapa base original */
+        #map.osm-gray .leaflet-tile-pane { filter: grayscale(1) brightness(1.06) contrast(0.85); }
+
         /* Pulido general */
         #side-panel, #winter-panel, #ush-winter-panel, #ush-cruise-panel, #ush-summer-panel { transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1); overscroll-behavior: contain; }
         button:focus-visible, a:focus-visible, .tab-btn:focus-visible { outline: 2px solid #0f766e; outline-offset: 2px; }
@@ -258,6 +261,8 @@
         /* Con el panel lateral abierto, el título no debe quedar debajo del panel */
         #title-wrap { max-width: calc(100vw - 2.5rem); transition: max-width 0.5s ease; }
         .panel-active #title-wrap { max-width: calc(50vw - 2.5rem); }
+
+        .title-toggle-hint { display: none; font-size: 0.7rem; color: #0f766e; font-weight: 600; }
 
         /* Móvil: paneles a pantalla completa y controles compactos sobre el mapa */
         @media (max-width: 767px) {
@@ -273,6 +278,12 @@
             #title-panel h2 { font-size: 0.8rem; margin-bottom: 0; }
             #title-panel h2 + h2 { font-size: 1.6rem; }
             #title-panel .title-extra { display: none; }
+            #title-panel { cursor: pointer; }
+            #title-wrap.title-open #title-panel .title-extra { display: block; }
+            #title-wrap.title-open #title-panel p.title-extra { font-size: 0.8rem; }
+            #title-wrap.title-open { z-index: 1100; }
+            .title-toggle-hint { display: inline-block !important; }
+            #title-wrap.title-open .title-toggle-hint { display: none !important; }
             #gore-logo-position { height: 2.5rem; }
 
             #map-controls { left: 0.75rem; bottom: 0.75rem; width: auto; max-width: calc(100vw - 4.5rem); }
@@ -328,6 +339,7 @@
                     <div class="flex flex-col leading-tight">
                         <h2 class="text-slate-800 font-bold text-2xl leading-tight">Mapa Interactivo de Conexión</h2>
                         <h2 class="text-slate-800 font-bold text-5xl leading-tight">Brasil - Patagonia</h2>
+                        <span class="title-toggle-hint"><i class="fas fa-circle-info mr-1"></i>Toca para ver más</span>
                     </div>
                     <i class="fas fa-plane text-slate-400 text-lg title-extra"></i>
                     <p class="text-slate-500 text-xs font-medium title-extra">Raul Rubilar</p>
@@ -1633,6 +1645,11 @@
                 display: false
             });
 
+            // Móvil: tocar el título muestra/oculta la descripción
+            document.getElementById('title-panel').addEventListener('click', () => {
+                if (window.innerWidth < 768) document.getElementById('title-wrap').classList.toggle('title-open');
+            });
+
             // Enlace del botón "Ver estudio de mercado completo". Estaba como href="#" (abría la misma página);
             // mientras no haya URL el botón se oculta. Pegar aquí el enlace al documento del estudio.
             const MARKET_STUDY_URL = '';
@@ -2103,10 +2120,28 @@
             };
 
             const map = L.map('map', { zoomControl: false }).setView([-48.0, -72.0], 5);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap &copy; CARTO',
-                maxZoom: 10
-            }).addTo(map);
+            // Mapa base. CARTO pasó a exigir API key (las teselas mostraban "API KEY REQUIRED").
+            // Se usa el gris claro de Esri (sin clave) y, si sus teselas fallan, OpenStreetMap en escala de grises.
+            map.createPane('labels');
+            map.getPane('labels').style.zIndex = 350; // sobre el mapa base, bajo rutas y marcadores
+            map.getPane('labels').style.pointerEvents = 'none';
+            const esriAttribution = 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors';
+            const baseLayers = [
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', { attribution: esriAttribution, maxZoom: 10 }),
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: 10, pane: 'labels' })
+            ];
+            let tileErrors = 0, usingFallback = false;
+            baseLayers[0].on('tileerror', () => {
+                if (usingFallback || ++tileErrors < 4) return;
+                usingFallback = true;
+                baseLayers.forEach(l => map.removeLayer(l));
+                document.getElementById('map').classList.add('osm-gray');
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    maxZoom: 10
+                }).addTo(map);
+            });
+            baseLayers.forEach(l => l.addTo(map));
             L.control.zoom({ position: 'bottomright' }).addTo(map);
 
             const ferias = [
