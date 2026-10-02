@@ -262,6 +262,10 @@
         #title-wrap { max-width: calc(100vw - 2.5rem); transition: max-width 0.5s ease; }
         .panel-active #title-wrap { max-width: calc(50vw - 2.5rem); }
 
+        /* Barra de ferias: en escritorio se mantiene igual (los elementos nuevos son solo para teléfono) */
+        .ferias-row { display: contents; }
+        .ferias-head, .ferias-row-label, .ferias-all-btn, .ferias-chip-icon, .ferias-month-count { display: none; }
+
         .title-toggle-hint { display: none; font-size: 0.7rem; color: #0f766e; font-weight: 600; }
 
         /* Móvil: paneles a pantalla completa y controles compactos sobre el mapa */
@@ -292,8 +296,37 @@
             #market-study-btn { width: 5.5rem; }
             #market-study-btn i { font-size: 1.5rem; }
 
-            #ferias-timeline { left: 0.75rem; right: 0.75rem; top: 7.25rem; flex-wrap: nowrap; overflow-x: auto; }
-            #ferias-timeline > div { flex-wrap: nowrap; }
+            /* Ferias en el teléfono: panel de filtros minimalista arriba de todo; la caja de título queda debajo, compacta */
+            #ferias-timeline { left: 0.5rem; right: 0.5rem; top: 0.5rem; z-index: 1200; display: block; padding: 0.55rem 0 0.6rem; border-radius: 1rem; border-color: transparent; background: rgba(255,255,255,0.97); box-shadow: 0 4px 18px rgba(15,23,42,0.10); }
+            #ferias-timeline.hidden { display: none !important; }
+            .ferias-active #title-wrap { transition: top 0.3s ease; }
+            .ferias-active #title-panel { padding: 0.35rem 0.7rem; box-shadow: 0 1px 4px rgba(15,23,42,0.06); border-color: transparent; }
+            .ferias-active #title-panel h2 { font-size: 0.65rem; }
+            .ferias-active #title-panel h2 + h2 { font-size: 1.05rem; }
+            .ferias-active .title-toggle-hint { display: none !important; }
+            .ferias-active #gore-logo-position { height: 2rem; }
+            .ferias-head { display: flex; align-items: center; gap: 0.5rem; padding: 0 0.6rem 0.45rem 0.85rem; }
+            .ferias-head-title { font-size: 0.85rem; font-weight: 700; color: #0f172a; white-space: nowrap; }
+            .ferias-head-title img { display: none; }
+            .ferias-count { font-size: 0.7rem; font-weight: 700; color: #0f766e; white-space: nowrap; }
+            .ferias-clear { margin-left: auto; font-size: 0.72rem; font-weight: 600; color: #0f766e; padding: 0.3rem 0.4rem; }
+            .ferias-clear.hidden + .ferias-close { margin-left: auto; }
+            .ferias-close { width: 2rem; height: 2rem; flex-shrink: 0; border-radius: 999px; color: #94a3b8; display: flex; align-items: center; justify-content: center; }
+            .ferias-row { display: block; padding: 0.2rem 0; }
+            .ferias-row-label, .ferias-year, .ferias-chip-icon { display: none !important; }
+            #ferias-sectors, #ferias-months { flex-wrap: nowrap; overflow-x: auto; margin: 0; padding: 0 0.85rem; gap: 0.35rem; scrollbar-width: none; scroll-padding: 0 0.85rem; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 0.85rem, #000 calc(100% - 1.25rem), transparent); mask-image: linear-gradient(90deg, transparent 0, #000 0.85rem, #000 calc(100% - 1.25rem), transparent); }
+            #ferias-sectors::-webkit-scrollbar, #ferias-months::-webkit-scrollbar { display: none; }
+            #ferias-sectors > :last-child, #ferias-months > :last-child { margin-right: 0.85rem; }
+            .ferias-all-btn { display: inline-flex; }
+            #ferias-timeline .ferias-sector-btn, #ferias-timeline .ferias-month-btn { flex-shrink: 0; min-height: 2.25rem; padding: 0.3rem 0.85rem; font-size: 0.78rem; font-weight: 600; border: none; border-radius: 999px; background: #f1f5f9; color: #475569; display: inline-flex; align-items: center; transition: background 0.2s, color 0.2s; }
+            #ferias-timeline .ferias-month-btn { position: relative; justify-content: center; min-width: 2.9rem; padding: 0.3rem 0.65rem; }
+            /* Conteo del mes como un pequeño número sobre la píldora */
+            .ferias-month-count { display: block; position: absolute; top: -0.2rem; right: -0.1rem; font-size: 0.55rem; font-weight: 700; line-height: 1; color: #0f766e; background: #fff; border-radius: 999px; padding: 0.1rem 0.25rem; box-shadow: 0 0 0 1px #ccfbf1; }
+            .ferias-month-count:empty { display: none; }
+            #ferias-months { padding-top: 0.25rem; }
+            #ferias-timeline .ferias-month-empty { opacity: 0.35; }
+            #ferias-timeline .active { background: #0f766e; color: #fff; }
+            #ferias-timeline .active .ferias-month-count { color: #fff; background: #f59e0b; box-shadow: none; }
             #ferias-report-btn { display: none !important; }
             .ferias-tooltip { font-size: 10px !important; }
 
@@ -350,26 +383,41 @@
             </div>
             <!-- Línea de tiempo mensual 2026 (solo visible con Ferias activo) -->
             <div id="ferias-timeline" class="absolute top-5 right-5 z-[1000] hidden items-center gap-2 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200 px-3 py-2 flex flex-wrap">
-                <div class="flex flex-wrap gap-1 mr-2" id="ferias-sectors">
-                    <button type="button" class="ferias-sector-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-sector="Agro">Agro</button>
-                    <button type="button" class="ferias-sector-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-sector="Turismo">Turismo</button>
-                    <button type="button" class="ferias-sector-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-sector="Acuicultura">Acuicultura</button>
-                    <button type="button" class="ferias-sector-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-sector="Energía">Energía</button>
+                <!-- Cabecera (solo móvil): título, conteo, limpiar y cerrar -->
+                <div class="ferias-head">
+                    <div class="ferias-head-title"><img src="https://flagcdn.com/w40/br.png" alt="" class="w-5 h-auto rounded-sm"> Ferias en Brasil 2026</div>
+                    <span id="ferias-count" class="ferias-count"></span>
+                    <button type="button" id="ferias-clear" class="ferias-clear hidden">Limpiar</button>
+                    <button type="button" class="ferias-close" onclick="toggleFeriasBrasil()" aria-label="Cerrar ferias"><i class="fas fa-times"></i></button>
                 </div>
-                <span class="text-xs font-medium text-slate-500">2026</span>
-                <div class="flex flex-wrap gap-1" id="ferias-months">
-                    <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="1">Ene</button>
-                    <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="2">Feb</button>
-                    <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="3">Mar</button>
-                    <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="4">Abr</button>
-                    <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="5">May</button>
-                    <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="6">Jun</button>
-                    <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="7">Jul</button>
-                    <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="8">Ago</button>
-                    <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="9">Sep</button>
-                    <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="10">Oct</button>
-                    <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="11">Nov</button>
-                    <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="12">Dic</button>
+                <div class="ferias-row">
+                    <span class="ferias-row-label">Sector</span>
+                    <div class="flex flex-wrap gap-1 mr-2" id="ferias-sectors">
+                        <button type="button" class="ferias-sector-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors ferias-all-btn" data-sector="">Todos</button>
+                        <button type="button" class="ferias-sector-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-sector="Agro"><i class="fas fa-tractor ferias-chip-icon"></i>Agro</button>
+                        <button type="button" class="ferias-sector-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-sector="Turismo"><i class="fas fa-suitcase-rolling ferias-chip-icon"></i>Turismo</button>
+                        <button type="button" class="ferias-sector-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-sector="Acuicultura"><i class="fas fa-fish ferias-chip-icon"></i>Acuicultura</button>
+                        <button type="button" class="ferias-sector-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-sector="Energía"><i class="fas fa-bolt ferias-chip-icon"></i>Energía</button>
+                    </div>
+                </div>
+                <div class="ferias-row">
+                    <span class="ferias-row-label">Mes <span class="ferias-row-hint">(puede elegir varios)</span></span>
+                    <span class="text-xs font-medium text-slate-500 ferias-year">2026</span>
+                    <div class="flex flex-wrap gap-1" id="ferias-months">
+                        <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors ferias-all-btn" data-month="0">Todos</button>
+                        <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="1">Ene<span class="ferias-month-count"></span></button>
+                        <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="2">Feb<span class="ferias-month-count"></span></button>
+                        <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="3">Mar<span class="ferias-month-count"></span></button>
+                        <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="4">Abr<span class="ferias-month-count"></span></button>
+                        <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="5">May<span class="ferias-month-count"></span></button>
+                        <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="6">Jun<span class="ferias-month-count"></span></button>
+                        <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="7">Jul<span class="ferias-month-count"></span></button>
+                        <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="8">Ago<span class="ferias-month-count"></span></button>
+                        <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="9">Sep<span class="ferias-month-count"></span></button>
+                        <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="10">Oct<span class="ferias-month-count"></span></button>
+                        <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="11">Nov<span class="ferias-month-count"></span></button>
+                        <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="12">Dic<span class="ferias-month-count"></span></button>
+                    </div>
                 </div>
             </div>
             <!-- Botón Ver detalle completo de ferias (solo visible con Ferias activo) -->
@@ -2177,6 +2225,7 @@
             ];
             let feriasLayer = null, feriasLegendControl = null, feriasActive = false, feriasMonthFilter = [], feriasSectorFilter = null;
             let airportMarkersLayer = null;
+            let feriasCompactLabels = false;
             const FERIAS_MONTH_MAP = { Jan:1, Ene:1, Feb:2, Mar:3, Abr:4, Apr:4, May:5, Jun:6, Jul:7, Ago:8, Aug:8, Sep:9, Oct:10, Nov:11, Dic:12, Dec:12 };
             const FERIAS_YEAR = 2026;
             // Fecha de término de la feria a partir de textos como "09-13 Feb" o "29 Ago - 06 Sep"
@@ -2195,19 +2244,22 @@
                 Object.keys(FERIAS_MONTH_MAP).forEach(k => { if (d.includes(k)) ms.add(FERIAS_MONTH_MAP[k]); });
                 return ms.has(monthNum);
             }
+            function feriaMatchesSector(feria, sector) {
+                if (!sector) return true;
+                const fType = feria.type || '';
+                if (sector === 'Agro') return fType.includes('Agro') || fType.includes('Ganadería');
+                if (sector === 'Turismo') return fType === 'Turismo';
+                if (sector === 'Acuicultura') return fType === 'Acuicultura' || fType === 'Pesca';
+                if (sector === 'Energía') return fType.includes('Energía') || fType.includes('Sustentabilidad');
+                return false;
+            }
+            function filterFerias(monthFilter, sectorFilter) {
+                return ferias.filter(f => feriaMatchesSector(f, sectorFilter) && (!monthFilter.length || monthFilter.some(m => feriaMatchesMonth(f, m))));
+            }
             function buildFeriasLayer(monthFilter, sectorFilter) {
-                let base = ferias;
-                if (monthFilter && monthFilter.length) base = base.filter(f => monthFilter.some(m => feriaMatchesMonth(f, m)));
-                if (sectorFilter) {
-                    base = base.filter(f => {
-                        const fType = f.type || '';
-                        if (sectorFilter === 'Agro') return fType.includes('Agro') || fType.includes('Ganadería');
-                        if (sectorFilter === 'Turismo') return fType === 'Turismo';
-                        if (sectorFilter === 'Acuicultura') return fType === 'Acuicultura' || fType === 'Pesca';
-                        if (sectorFilter === 'Energía') return fType.includes('Energía') || fType.includes('Sustentabilidad');
-                        return false;
-                    });
-                }
+                const base = filterFerias(monthFilter, sectorFilter);
+                // En el teléfono, con muchas ferias las etiquetas fijas se superponen: se muestran al tocar el punto
+                feriasCompactLabels = isPhone() && base.length > 6;
                 const g = L.layerGroup();
                 const spFairs = base.filter(f => f.city.includes("São Paulo"));
                 const otherFairs = base.filter(f => !f.city.includes("São Paulo"));
@@ -2232,27 +2284,67 @@
                 map.addLayer(feriasLayer);
                 updateFeriasTimelineButtons();
                 updateFeriasSectorButtons();
+                updateFeriasSummary();
+                if (isPhone()) fitFeriasOnPhone();
             }
+            const isPhone = () => window.innerWidth < 768;
             function updateFeriasSectorButtons() {
-                document.querySelectorAll('.ferias-sector-btn').forEach(b => { b.classList.remove('active'); });
-                const sel = document.querySelector(`.ferias-sector-btn[data-sector="${feriasSectorFilter}"]`);
-                if (sel) sel.classList.add('active');
+                document.querySelectorAll('.ferias-sector-btn').forEach(b => {
+                    b.classList.toggle('active', (b.dataset.sector || null) === feriasSectorFilter);
+                });
             }
             function updateFeriasTimelineButtons() {
                 document.querySelectorAll('.ferias-month-btn').forEach(b => {
-                    b.classList.remove('active');
                     const m = parseInt(b.dataset.month, 10);
-                    if (feriasMonthFilter.includes(m)) b.classList.add('active');
+                    b.classList.toggle('active', m === 0 ? !feriasMonthFilter.length : feriasMonthFilter.includes(m));
+                    if (m === 0) return;
+                    // Cantidad de ferias del mes según el sector elegido; meses sin ferias se atenúan
+                    const n = ferias.filter(f => feriaMatchesSector(f, feriasSectorFilter) && feriaMatchesMonth(f, m)).length;
+                    b.querySelector('.ferias-month-count').textContent = n || '';
+                    b.classList.toggle('ferias-month-empty', n === 0);
                 });
             }
+            function updateFeriasSummary() {
+                const n = filterFerias(feriasMonthFilter, feriasSectorFilter).length;
+                document.getElementById('ferias-count').textContent = n === 1 ? '1 feria' : `${n} ferias`;
+                document.getElementById('ferias-clear').classList.toggle('hidden', !feriasMonthFilter.length && !feriasSectorFilter);
+            }
+            // En el teléfono: encuadrar las ferias visibles bajo la barra de filtros
+            function fitFeriasOnPhone() {
+                const pts = [];
+                feriasLayer.eachLayer(l => { if (l.getLatLng && !(l instanceof L.CircleMarker)) pts.push(l.getLatLng()); });
+                if (!pts.length) return;
+                const tl = document.getElementById('ferias-timeline');
+                const top = tl.offsetTop + tl.offsetHeight + 70;
+                map.flyToBounds(L.latLngBounds(pts), { paddingTopLeft: [40, top], paddingBottomRight: [40, 110], maxZoom: 6, duration: 0.8 });
+            }
+            // En el teléfono la barra de ferias va arriba y la caja de título se ubica debajo de ella
+            window.positionFeriasLayout = function() {
+                const tl = document.getElementById('ferias-timeline');
+                const titleWrap = document.getElementById('title-wrap');
+                if (isPhone() && feriasActive) titleWrap.style.top = (tl.offsetTop + tl.offsetHeight + 8) + 'px';
+                else titleWrap.style.top = '';
+            };
             function addFeriasMarker(feria, lat, lng, layer) {
                 const isP = feria.priority, sz = isP ? 24 : 14, cls = isP ? 'ferias-marker-priority' : 'ferias-marker-normal', z = isP ? 1000 : 500;
                 const icon = L.divIcon({ className: 'custom-div-icon', html: `<div class="ferias-marker-icon ${cls}" style="width:${sz}px;height:${sz}px;"></div>`, iconSize: [sz, sz], iconAnchor: [sz/2, sz/2] });
                 const m = L.marker([lat, lng], { icon, zIndexOffset: z }).addTo(layer);
                 const past = feriaIsPast(feria);
                 const tip = `<div class="text-center" onclick="window.open('${feria.url}','_blank')"><div style="font-size:1.1em;margin-bottom:2px;font-weight:bold">${feria.name}</div><div style="color:#555;font-weight:normal">(${feria.type})</div><div style="color:#555;font-weight:normal">${feria.date} ${FERIAS_YEAR}</div>${past ? '<div class="ferias-past-tag">Realizada</div>' : ''}<span class="ferias-click-hint">(Clic para web)</span>${isP ? '<div style="color:#d97706;font-size:0.8em;margin-top:2px">★ PRIORIDAD</div>' : ''}</div>`;
-                m.bindTooltip(tip, { permanent: true, direction: 'top', className: (isP ? 'ferias-tooltip ferias-tooltip-priority' : 'ferias-tooltip') + (past ? ' ferias-tooltip-past' : ''), offset: [0, -10], interactive: true });
-                m.on('click', () => window.open(feria.url, '_blank'));
+                const tipClass = (isP ? 'ferias-tooltip ferias-tooltip-priority' : 'ferias-tooltip') + (past ? ' ferias-tooltip-past' : '');
+                if (feriasCompactLabels) {
+                    // Tocar el punto abre la tarjeta (y cierra las demás); tocar la tarjeta abre la web
+                    m.bindTooltip(tip.replace('(Clic para web)', 'Toca aquí para abrir la web'), { permanent: true, direction: 'top', className: tipClass, offset: [0, -10], interactive: true });
+                    m.on('add', () => m.closeTooltip());
+                    m.on('click', () => {
+                        const open = m.isTooltipOpen();
+                        layer.eachLayer(o => o.closeTooltip && o.closeTooltip());
+                        if (!open) m.openTooltip();
+                    });
+                } else {
+                    m.bindTooltip(tip, { permanent: true, direction: 'top', className: tipClass, offset: [0, -10], interactive: true });
+                    m.on('click', () => window.open(feria.url, '_blank'));
+                }
             }
             function getFeriasLegendControl() {
                 const c = L.control({ position: 'bottomright' });
@@ -2286,6 +2378,8 @@
                     map.flyTo([-48, -72], 5, { duration: 1 });
                     feriasActive = false;
                     if (tl) tl.classList.add('hidden');
+                    document.getElementById('main-wrapper').classList.remove('ferias-active');
+                    positionFeriasLayout();
                     const reportBtn = document.getElementById('ferias-report-btn');
                     if (reportBtn) reportBtn.classList.add('hidden');
                     if (marketBtn && MARKET_STUDY_URL) marketBtn.classList.remove('hidden');
@@ -2294,12 +2388,18 @@
                     if (airportMarkersLayer) map.removeLayer(airportMarkersLayer);
                     feriasMonthFilter = [];
                     feriasSectorFilter = null;
+                    feriasActive = true;
+                    if (tl) tl.classList.remove('hidden');
+                    document.getElementById('main-wrapper').classList.add('ferias-active');
+                    document.getElementById('title-wrap').classList.remove('title-open');
+                    positionFeriasLayout();
                     applyFeriasFilter();
                     if (!feriasLegendControl) feriasLegendControl = getFeriasLegendControl();
                     feriasLegendControl.addTo(map);
-                    map.flyTo([-15.7801, -52], 4, { duration: 1.5 });
-                    feriasActive = true;
-                    if (tl) tl.classList.remove('hidden');
+                    if (!isPhone()) map.flyTo([-15.7801, -52], 4, { duration: 1.5 });
+                    // Mostrar el mes actual en la fila de meses
+                    const cur = document.querySelector(`.ferias-month-btn[data-month="${new Date().getMonth() + 1}"]`);
+                    if (cur && isPhone()) cur.scrollIntoView({ block: 'nearest', inline: 'center' });
                     const reportBtn = document.getElementById('ferias-report-btn');
                     if (reportBtn) {
                         reportBtn.classList.remove('hidden');
@@ -2316,6 +2416,7 @@
                 btn.addEventListener('click', function() {
                     if (!feriasActive) return;
                     const month = parseInt(this.dataset.month, 10);
+                    if (month === 0) { feriasMonthFilter = []; applyFeriasFilter(); return; }
                     const i = feriasMonthFilter.indexOf(month);
                     if (i >= 0) feriasMonthFilter.splice(i, 1);
                     else feriasMonthFilter.push(month);
@@ -2323,10 +2424,15 @@
                     applyFeriasFilter();
                 });
             });
+            document.getElementById('ferias-clear').addEventListener('click', () => {
+                feriasMonthFilter = [];
+                feriasSectorFilter = null;
+                applyFeriasFilter();
+            });
             document.querySelectorAll('.ferias-sector-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     if (!feriasActive) return;
-                    const sector = this.dataset.sector;
+                    const sector = this.dataset.sector || null;
                     if (feriasSectorFilter === sector) {
                         feriasSectorFilter = null;
                     } else {
@@ -4124,6 +4230,7 @@
             }
         }
         window.addEventListener('resize', positionFeriasReportBtn);
+        window.addEventListener('resize', () => { if (window.positionFeriasLayout) window.positionFeriasLayout(); });
     </script>
 </body>
 </html>
