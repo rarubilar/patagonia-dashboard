@@ -264,7 +264,7 @@
 
         /* Barra de ferias: en escritorio se mantiene igual (los elementos nuevos son solo para teléfono) */
         .ferias-row { display: contents; }
-        .ferias-head, .ferias-tap-hint, .ferias-row-label, .ferias-all-btn, .ferias-chip-icon, .ferias-month-count { display: none; }
+        .ferias-head, .ferias-row-label, .ferias-all-btn, .ferias-chip-icon, .ferias-month-count { display: none; }
 
         .title-toggle-hint { display: none; font-size: 0.7rem; color: #0f766e; font-weight: 600; }
 
@@ -296,34 +296,37 @@
             #market-study-btn { width: 5.5rem; }
             #market-study-btn i { font-size: 1.5rem; }
 
-            /* Ferias en el teléfono: panel de filtros arriba de todo, la caja de título queda debajo */
-            #ferias-timeline { left: 0.5rem; right: 0.5rem; top: 0.5rem; z-index: 1200; display: block; padding: 0.6rem 0 0.5rem; border-radius: 0.9rem; box-shadow: 0 8px 24px rgba(15,23,42,0.18); }
+            /* Ferias en el teléfono: panel de filtros minimalista arriba de todo; la caja de título queda debajo, compacta */
+            #ferias-timeline { left: 0.5rem; right: 0.5rem; top: 0.5rem; z-index: 1200; display: block; padding: 0.55rem 0 0.6rem; border-radius: 1rem; border-color: transparent; background: rgba(255,255,255,0.97); box-shadow: 0 4px 18px rgba(15,23,42,0.10); }
             #ferias-timeline.hidden { display: none !important; }
             .ferias-active #title-wrap { transition: top 0.3s ease; }
-            .ferias-active #title-panel { box-shadow: 0 2px 8px rgba(15,23,42,0.08); }
-            .ferias-head { display: flex; align-items: center; gap: 0.5rem; padding: 0 0.75rem 0.5rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 0.45rem; }
-            .ferias-head-title { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 800; color: #0f172a; white-space: nowrap; }
-            .ferias-tap-hint { display: block; font-size: 0.68rem; color: #64748b; padding: 0.15rem 0.75rem 0; }
-            .ferias-count { font-size: 0.7rem; font-weight: 700; color: #0f766e; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 999px; padding: 0.1rem 0.5rem; white-space: nowrap; }
-            .ferias-clear { margin-left: auto; font-size: 0.75rem; font-weight: 700; color: #ea580c; padding: 0.35rem 0.5rem; border-radius: 0.5rem; }
+            .ferias-active #title-panel { padding: 0.35rem 0.7rem; box-shadow: 0 1px 4px rgba(15,23,42,0.06); border-color: transparent; }
+            .ferias-active #title-panel h2 { font-size: 0.65rem; }
+            .ferias-active #title-panel h2 + h2 { font-size: 1.05rem; }
+            .ferias-active .title-toggle-hint { display: none !important; }
+            .ferias-active #gore-logo-position { height: 2rem; }
+            .ferias-head { display: flex; align-items: center; gap: 0.5rem; padding: 0 0.6rem 0.45rem 0.85rem; }
+            .ferias-head-title { font-size: 0.85rem; font-weight: 700; color: #0f172a; white-space: nowrap; }
+            .ferias-head-title img { display: none; }
+            .ferias-count { font-size: 0.7rem; font-weight: 700; color: #0f766e; white-space: nowrap; }
+            .ferias-clear { margin-left: auto; font-size: 0.72rem; font-weight: 600; color: #0f766e; padding: 0.3rem 0.4rem; }
             .ferias-clear.hidden + .ferias-close { margin-left: auto; }
-            .ferias-close { width: 2.25rem; height: 2.25rem; flex-shrink: 0; border-radius: 999px; background: #f1f5f9; color: #475569; display: flex; align-items: center; justify-content: center; }
-            .ferias-row { display: block; padding: 0.15rem 0 0.3rem; }
-            .ferias-row-label { display: block; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #64748b; padding: 0 0.75rem 0.3rem; }
-            .ferias-row-hint { text-transform: none; letter-spacing: 0; font-weight: 500; color: #94a3b8; }
-            .ferias-year { display: none; }
-            #ferias-sectors, #ferias-months { flex-wrap: nowrap; overflow-x: auto; margin: 0; padding: 0 0.75rem; gap: 0.4rem; scrollbar-width: none; scroll-padding: 0 0.75rem; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 0.75rem, #000 calc(100% - 1.25rem), transparent); mask-image: linear-gradient(90deg, transparent 0, #000 0.75rem, #000 calc(100% - 1.25rem), transparent); }
+            .ferias-close { width: 2rem; height: 2rem; flex-shrink: 0; border-radius: 999px; color: #94a3b8; display: flex; align-items: center; justify-content: center; }
+            .ferias-row { display: block; padding: 0.2rem 0; }
+            .ferias-row-label, .ferias-year, .ferias-chip-icon { display: none !important; }
+            #ferias-sectors, #ferias-months { flex-wrap: nowrap; overflow-x: auto; margin: 0; padding: 0 0.85rem; gap: 0.35rem; scrollbar-width: none; scroll-padding: 0 0.85rem; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 0.85rem, #000 calc(100% - 1.25rem), transparent); mask-image: linear-gradient(90deg, transparent 0, #000 0.85rem, #000 calc(100% - 1.25rem), transparent); }
             #ferias-sectors::-webkit-scrollbar, #ferias-months::-webkit-scrollbar { display: none; }
-            #ferias-sectors > :last-child, #ferias-months > :last-child { margin-right: 0.75rem; }
-            .ferias-all-btn, .ferias-chip-icon { display: inline-block; }
-            #ferias-timeline .ferias-sector-btn, #ferias-timeline .ferias-month-btn { flex-shrink: 0; min-height: 2.5rem; padding: 0.35rem 0.8rem; font-size: 0.8rem; font-weight: 600; border-radius: 999px; color: #334155; display: inline-flex; align-items: center; gap: 0.35rem; }
-            #ferias-timeline .ferias-month-btn { flex-direction: column; justify-content: center; gap: 0; min-width: 3.1rem; padding: 0.2rem 0.6rem; line-height: 1.1; }
-            .ferias-month-count { display: block; font-size: 0.6rem; font-weight: 700; color: #0f766e; min-height: 0.7rem; }
-            #ferias-timeline .ferias-month-btn.ferias-all-btn .ferias-month-count { display: none; }
-            #ferias-timeline .ferias-month-empty { opacity: 0.4; }
-            #ferias-timeline .active { background: #0f766e; color: #fff; border-color: #0f766e; box-shadow: 0 2px 6px rgba(15,118,110,0.3); }
-            #ferias-timeline .active .ferias-month-count { color: #ccfbf1; }
-            .ferias-chip-icon { font-size: 0.75rem; opacity: 0.8; }
+            #ferias-sectors > :last-child, #ferias-months > :last-child { margin-right: 0.85rem; }
+            .ferias-all-btn { display: inline-flex; }
+            #ferias-timeline .ferias-sector-btn, #ferias-timeline .ferias-month-btn { flex-shrink: 0; min-height: 2.25rem; padding: 0.3rem 0.85rem; font-size: 0.78rem; font-weight: 600; border: none; border-radius: 999px; background: #f1f5f9; color: #475569; display: inline-flex; align-items: center; transition: background 0.2s, color 0.2s; }
+            #ferias-timeline .ferias-month-btn { position: relative; justify-content: center; min-width: 2.9rem; padding: 0.3rem 0.65rem; }
+            /* Conteo del mes como un pequeño número sobre la píldora */
+            .ferias-month-count { display: block; position: absolute; top: -0.2rem; right: -0.1rem; font-size: 0.55rem; font-weight: 700; line-height: 1; color: #0f766e; background: #fff; border-radius: 999px; padding: 0.1rem 0.25rem; box-shadow: 0 0 0 1px #ccfbf1; }
+            .ferias-month-count:empty { display: none; }
+            #ferias-months { padding-top: 0.25rem; }
+            #ferias-timeline .ferias-month-empty { opacity: 0.35; }
+            #ferias-timeline .active { background: #0f766e; color: #fff; }
+            #ferias-timeline .active .ferias-month-count { color: #fff; background: #f59e0b; box-shadow: none; }
             #ferias-report-btn { display: none !important; }
             .ferias-tooltip { font-size: 10px !important; }
 
@@ -416,7 +419,6 @@
                         <button type="button" class="ferias-month-btn px-2 py-1 text-xs rounded border border-slate-200 bg-white hover:bg-slate-100 hover:border-slate-300 transition-colors" data-month="12">Dic<span class="ferias-month-count"></span></button>
                     </div>
                 </div>
-                <div id="ferias-tap-hint" class="ferias-tap-hint hidden"><i class="fas fa-hand-pointer mr-1"></i>Toca un punto del mapa para ver la feria</div>
             </div>
             <!-- Botón Ver detalle completo de ferias (solo visible con Ferias activo) -->
             <a id="ferias-report-btn" href="https://docs.google.com/document/d/1HHQnwmdzrNluXQIGUj1cyJk0ydAWIj7e44H_8Igpb4M/edit?usp=sharing" target="_blank" class="absolute right-5 z-[1000] hidden flex flex-col items-center justify-between gap-2 bg-white/90 rounded-lg shadow-lg border border-slate-200 p-3 transition-all text-[9px] font-medium text-slate-700 w-28">
@@ -2305,7 +2307,6 @@
             function updateFeriasSummary() {
                 const n = filterFerias(feriasMonthFilter, feriasSectorFilter).length;
                 document.getElementById('ferias-count').textContent = n === 1 ? '1 feria' : `${n} ferias`;
-                document.getElementById('ferias-tap-hint').classList.toggle('hidden', !feriasCompactLabels);
                 document.getElementById('ferias-clear').classList.toggle('hidden', !feriasMonthFilter.length && !feriasSectorFilter);
             }
             // En el teléfono: encuadrar las ferias visibles bajo la barra de filtros
